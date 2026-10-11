@@ -1,6 +1,10 @@
 # Desktop Commander MCP
 ### Search, update, manage files and run terminal commands with AI
 
+> Independent enhanced review version of [wonderwhy-er/DesktopCommanderMCP](https://github.com/wonderwhy-er/DesktopCommanderMCP). This repository contains a clean release snapshot and does not include private deployment settings or development history.
+>
+> See [Upstream Problems and Improvements](docs/UPSTREAM_PROBLEMS_AND_IMPROVEMENTS.md) for the exact changes in this version.
+
 [![npm downloads](https://img.shields.io/npm/dw/@wonderwhy-er/desktop-commander)](https://www.npmjs.com/package/@wonderwhy-er/desktop-commander)
 [![AgentAudit Verified](https://agentaudit.dev/api/badge/desktop-commander)](https://agentaudit.dev/skills/desktop-commander)
 [![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/wonderwhy-er/DesktopCommanderMCP)](https://archestra.ai/mcp-catalog/wonderwhy-er__desktopcommandermcp)

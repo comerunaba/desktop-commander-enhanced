@@ -17,7 +17,7 @@ function getPythonCommand() {
       execSync('command -v python', { stdio: 'ignore' });
       return 'python';
     } catch (error) {
-      throw new Error('Neither python3 nor python command is available in the PATH');
+      return null;
     }
   }
 }
@@ -30,6 +30,10 @@ async function testEnhancedREPL() {
   console.log('Testing enhanced REPL functionality...');
   
   const pythonCommand = getPythonCommand();
+  if (!pythonCommand) {
+    console.log('SKIPPED: Python is not installed or not available on PATH');
+    return true;
+  }
   console.log(`Using python command: ${pythonCommand}`);
 
   // Start Python in interactive mode
