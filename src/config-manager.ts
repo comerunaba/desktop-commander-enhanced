@@ -213,7 +213,17 @@ class ConfigManager {
     const tempPath = `${this.configPath}.${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}.tmp`;
     try {
       await fs.writeFile(tempPath, JSON.stringify(config, null, 2), 'utf8');
-      await fs.rename(tempPath, this.configPath);
+      for (let attempt = 0; ; attempt++) {
+        try {
+          await fs.rename(tempPath, this.configPath);
+          break;
+        } catch (error: any) {
+          const transientWindowsLock = process.platform === 'win32' &&
+            ['EPERM', 'EACCES', 'EBUSY'].includes(error?.code);
+          if (!transientWindowsLock || attempt >= 20) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      }
     } finally {
       await fs.unlink(tempPath).catch(() => {});
     }
