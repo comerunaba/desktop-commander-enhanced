@@ -122,8 +122,9 @@ export async function extractImagesFromPdf(
             }
         } catch (e) { /* Ignore cleanup errors */ }
         try {
-            if (typeof pdfDocument.destroy === 'function') {
-                await pdfDocument.destroy();
+            const destroy = (pdfDocument as unknown as { destroy?: () => Promise<void> }).destroy;
+            if (typeof destroy === 'function') {
+                await destroy.call(pdfDocument);
             }
         } catch (e) { /* Ignore cleanup errors */ }
     }
