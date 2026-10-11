@@ -30,6 +30,21 @@ export interface SearchSession {
   wasIncomplete?: boolean;  // NEW: Track if search was incomplete due to permissions/access issues
 }
 
+/** Answers show this many characters of a result's text. */
+export const SHOWN_TEXT_CHARS = 100;
+
+/** Bound ripgrep stderr retained by a session. */
+const MAX_KEPT_ERROR_CHARS = 64 * 1024;
+
+/**
+ * Keep only the text shown to callers plus one character for the ellipsis.
+ * Copy the slice so V8 does not retain a huge ripgrep line through a substring.
+ */
+const keptText = (text: string | undefined): string | undefined =>
+  text === undefined
+    ? undefined
+    : Buffer.from(text.slice(0, SHOWN_TEXT_CHARS + 1), 'utf16le').toString('utf16le');
+
 export interface SearchSessionOptions {
   rootPath: string;
   pattern: string;
@@ -821,9 +836,11 @@ export interface SearchSessionOptions {
     process.stderr?.on('data', (data: Buffer) => {
       const errorText = data.toString();
 
-      // Store error text for potential user display, but don't capture individual errors
-      // We'll capture incomplete search status in the completion event instead
-      session.error = (session.error || '') + errorText;
+      // Keep stderr once and bound it: permission-heavy searches can emit
+      // thousands of repeated diagnostics.
+      if ((session.error?.length ?? 0) < MAX_KEPT_ERROR_CHARS) {
+        session.error = (session.error || '') + errorText.slice(0, MAX_KEPT_ERROR_CHARS - (session.error?.length ?? 0));
+      }
 
       // Filter meaningful errors
       const filteredErrors = errorText
@@ -844,7 +861,6 @@ export interface SearchSessionOptions {
       if (filteredErrors.length > 0) {
         const meaningfulErrors = filteredErrors.join('\n').trim();
         if (meaningfulErrors) {
-          session.error = (session.error || '') + meaningfulErrors + '\n';
           capture('search_session_error', {
             sessionId: session.id,
             error: meaningfulErrors.substring(0, 200)
@@ -964,7 +980,7 @@ export interface SearchSessionOptions {
           return {
             file: parsed.data.path.text,
             line: parsed.data.line_number,
-            match: submatch?.match?.text || parsed.data.lines.text,
+            match: keptText(submatch?.match?.text || parsed.data.lines.text),
             type: 'content'
           };
         }
@@ -973,7 +989,7 @@ export interface SearchSessionOptions {
           return {
             file: parsed.data.path.text,
             line: parsed.data.line_number,
-            match: parsed.data.lines.text.trim(),
+            match: keptText(parsed.data.lines.text.trim()),
             type: 'content'
           };
         }
