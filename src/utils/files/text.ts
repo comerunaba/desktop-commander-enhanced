@@ -349,8 +349,9 @@ export class TextFileHandler implements FileHandler {
         encoding?: BufferEncoding,
         start?: number
     ): Promise<FileResult> {
+        const stream = createReadStream(filePath, { signal, encoding, start });
         const rl = createInterface({
-            input: createReadStream(filePath, { signal, encoding, start }),
+            input: stream,
             crlfDelay: Infinity
         });
 
@@ -365,6 +366,9 @@ export class TextFileHandler implements FileHandler {
         }
 
         rl.close();
+        // readline.close() stops iteration but does not reliably release the
+        // underlying file handle on Windows after an early loop break.
+        stream.destroy();
 
         let result: string[];
         if (totalLines >= requestedLines) {
@@ -397,8 +401,9 @@ export class TextFileHandler implements FileHandler {
         encoding?: BufferEncoding,
         start?: number
     ): Promise<FileResult> {
+        const stream = createReadStream(filePath, { signal, encoding, start });
         const rl = createInterface({
-            input: createReadStream(filePath, { signal, encoding, start }),
+            input: stream,
             crlfDelay: Infinity
         });
 
@@ -414,6 +419,9 @@ export class TextFileHandler implements FileHandler {
         }
 
         rl.close();
+        // readline.close() stops iteration but does not reliably release the
+        // underlying file handle on Windows after an early loop break.
+        stream.destroy();
 
         if (includeStatusMessage) {
             const statusMessage = this.generateEnhancedStatusMessage(result.length, offset, fileTotalLines, false);
@@ -438,8 +446,9 @@ export class TextFileHandler implements FileHandler {
         signal?: AbortSignal
     ): Promise<FileResult> {
         // First, do a quick scan to estimate lines per byte
+        const sampleStream = createReadStream(filePath, { signal });
         const rl = createInterface({
-            input: createReadStream(filePath, { signal }),
+            input: sampleStream,
             crlfDelay: Infinity
         });
 
@@ -453,6 +462,9 @@ export class TextFileHandler implements FileHandler {
         }
 
         rl.close();
+        // readline.close() stops iteration but does not reliably release the
+        // underlying file handle on Windows after an early loop break.
+        sampleStream.destroy();
 
         if (sampleLines === 0) {
             return await this.readFromStartWithReadline(filePath, offset, length, mimeType, includeStatusMessage, fileTotalLines, signal);
@@ -467,9 +479,9 @@ export class TextFileHandler implements FileHandler {
             const stats = await fd.stat();
             const startPosition = Math.min(estimatedBytePosition, stats.size);
 
-            const stream = createReadStream(filePath, { start: startPosition, signal });
+            const positionStream = createReadStream(filePath, { start: startPosition, signal });
             const rl2 = createInterface({
-                input: stream,
+                input: positionStream,
                 crlfDelay: Infinity
             });
 
@@ -490,6 +502,8 @@ export class TextFileHandler implements FileHandler {
             }
 
             rl2.close();
+            // Explicitly destroy the second stream after an early pagination break.
+            positionStream.destroy();
 
             const content = includeStatusMessage
                 ? `${this.generateEnhancedStatusMessage(result.length, offset, fileTotalLines, false)}\n\n${result.join('\n')}`
