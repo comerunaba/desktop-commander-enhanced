@@ -1,9 +1,28 @@
 # Desktop Commander MCP
 ### Search, update, manage files and run terminal commands with AI
 
-> Independent enhanced review version of [wonderwhy-er/DesktopCommanderMCP](https://github.com/wonderwhy-er/DesktopCommanderMCP). This repository contains a clean release snapshot and does not include private deployment settings or development history.
->
-> See [Upstream Problems and Improvements](docs/UPSTREAM_PROBLEMS_AND_IMPROVEMENTS.md) for the exact changes in this version.
+## Why choose this version?
+
+This is an independent, reliability-focused version of [wonderwhy-er/DesktopCommanderMCP](https://github.com/wonderwhy-er/DesktopCommanderMCP). It is intended for users who want the upstream Desktop Commander functionality with the focused fixes described below.
+
+This is not an official upstream release. Choose the original repository for the official project; choose this version when these reliability improvements are useful to you.
+
+### Problems addressed and fixes
+
+| Problem observed | Impact | Fix in this version |
+| --- | --- | --- |
+| Windows paginated text reads could retain open streams longer than necessary | Repeated reads could leave file handles open | Read streams are released after pagination completes |
+| Large searches could retain more result output in memory than necessary | Memory usage could grow during large searches | Retained search output is bounded while progressive results remain available |
+| Windows configuration replacement could hit a transient file lock | A valid configuration save could fail with `EPERM`, `EACCES`, or `EBUSY` | Configuration replacement retries transient Windows lock errors with bounded backoff |
+| Dependency versions needed maintenance and compatibility updates | Build and production dependency risk | Compatible dependencies were refreshed and the production dependency audit was clean |
+| The enhanced REPL test assumed Python was installed | The test could fail on machines without Python | The Python-specific check skips cleanly when Python is unavailable |
+
+### Verification
+
+The clean review snapshot passed the Windows full test suite: 70 test modules completed with exit code `0`. The filesystem path was also verified through real create, read, edit, verify, and delete operations.
+
+See [Upstream Problems and Improvements](docs/UPSTREAM_PROBLEMS_AND_IMPROVEMENTS.md) for the detailed record and scope.
+
 
 [![npm downloads](https://img.shields.io/npm/dw/@wonderwhy-er/desktop-commander)](https://www.npmjs.com/package/@wonderwhy-er/desktop-commander)
 [![AgentAudit Verified](https://agentaudit.dev/api/badge/desktop-commander)](https://agentaudit.dev/skills/desktop-commander)
